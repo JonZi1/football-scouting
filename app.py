@@ -14,12 +14,20 @@ st.set_page_config(
 st.title("⚽ Football Player Scouting Dashboard")
 st.caption("Compare and analyze Premier League players using FPL data (2025-26 season)")
 
-# Check if data exists
+# Check if data exists, if not fetch it
 DATA_FILE = Path(__file__).parent / "data" / "players.csv"
 
 if not DATA_FILE.exists():
-    st.warning("No player data found. Run `python scraper.py` first to fetch data.")
-    st.stop()
+    with st.spinner("Fetching player data..."):
+        from scraper import download_fpl_data, clean_fpl_data
+        DATA_FILE.parent.mkdir(exist_ok=True)
+        df = download_fpl_data()
+        if not df.empty:
+            df = clean_fpl_data(df)
+            df.to_csv(DATA_FILE, index=False)
+        else:
+            st.error("Could not fetch player data. Please try again later.")
+            st.stop()
 
 # Load data
 @st.cache_data
